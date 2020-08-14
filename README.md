@@ -8,6 +8,11 @@ After switching to Spotify, i noticed they don't have a way to only see the albu
 ```
 git clone https://github.com/IbrahimFadel/albumify
 cd albumify
+```
+
+Go to the [Spotify Developer Console](https://developer.spotify.com/console/) and get credentials. Put them into ```main.py```
+
+```
 make && make install
 ```
 
