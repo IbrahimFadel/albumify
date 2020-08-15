@@ -22,6 +22,8 @@ static int width = 640;
 static int height = 700;
 static std::string title = "Spotify Client";
 
+static std::string last_image_url;
+
 static sf::Texture album_texture;
 static sf::Sprite album_sprite;
 
@@ -117,41 +119,46 @@ void update()
 {
 	Track track = get_current_track();
 
-	CURL *curl;
-	CURLcode res;
-
-	std::string image_buffer;
-	curl_global_init(CURL_GLOBAL_DEFAULT);
-
-	curl = curl_easy_init();
-	if (curl)
+	if (track.image_url != last_image_url)
 	{
-		curl_easy_setopt(curl, CURLOPT_URL, track.image_url.c_str());
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &image_buffer);
-		res = curl_easy_perform(curl);
+		CURL *curl;
+		CURLcode res;
+
+		std::string image_buffer;
+		curl_global_init(CURL_GLOBAL_DEFAULT);
+
+		curl = curl_easy_init();
+		if (curl)
+		{
+			curl_easy_setopt(curl, CURLOPT_URL, track.image_url.c_str());
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &image_buffer);
+			res = curl_easy_perform(curl);
+		}
+		else
+		{
+			cout << "Error downloading file: " << track.image_url << endl;
+			return;
+		}
+
+		std::ofstream file;
+		file.open("album.png", std::ios::binary);
+		file.write(image_buffer.c_str(), image_buffer.size());
+		file.close();
+
+		if (!album_texture.loadFromFile("album.png"))
+		{
+			cout << "Error loading album.png" << endl;
+			return;
+		}
+
+		album_texture.setSmooth(true);
+
+		album_sprite.setTexture(album_texture);
+		album_sprite.setPosition(0, 0);
 	}
-	else
-	{
-		cout << "Error downloading file: " << track.image_url << endl;
-		return;
-	}
 
-	std::ofstream file;
-	file.open("album.png", std::ios::binary);
-	file.write(image_buffer.c_str(), image_buffer.size());
-	file.close();
-
-	if (!album_texture.loadFromFile("album.png"))
-	{
-		cout << "Error loading album.png" << endl;
-		return;
-	}
-
-	album_texture.setSmooth(true);
-
-	album_sprite.setTexture(album_texture);
-	album_sprite.setPosition(0, 0);
+	last_image_url = track.image_url;
 
 	duration_bar.setFillColor(duration_bar_bg);
 	duration_bar.setSize(sf::Vector2f(duration_bar_width, duration_bar_height));
