@@ -1,28 +1,35 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#include <SFML/Graphics.hpp>
+
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <SFML/Graphics.hpp>
 #include <curl/curl.h>
 #include <unistd.h>
 #include <bitset>
 
-#include "Font.h"
+#include "lato.h"
 #include "config.h"
 
 using std::cout;
 using std::endl;
 
 static int width = 640;
-static int height = 740;
+static int height = 780;
 static std::string title = "Spotify Client";
 
 static std::string last_image_url;
 
 static sf::Texture album_texture;
 static sf::Sprite album_sprite;
+
+static sf::Texture play_texture;
+static sf::Sprite play_sprite;
+
+static sf::Texture pause_texture;
+static sf::Sprite pause_sprite;
 
 static sf::RectangleShape duration_bar;
 static sf::RectangleShape progress_bar;
@@ -40,6 +47,8 @@ static int track_name_text_size = 15;
 static sf::Text track_artist_album_text;
 static int track_artist_album_text_size = 12;
 
+static bool playing;
+
 typedef struct Track
 {
 	float duration;
@@ -48,6 +57,7 @@ typedef struct Track
 	std::string name;
 	std::string artist;
 	std::string album;
+	bool playing;
 } Track;
 
 Track get_current_track()
@@ -75,30 +85,40 @@ Track get_current_track()
 	if (pFunc && PyCallable_Check(pFunc))
 	{
 		PyObject *pArgs = PyTuple_New(0);
+		PyObject *pValue = PyObject_CallObject(pFunc, pArgs);
+
 		PyObject *length_key = PyUnicode_FromString("length");
 		PyObject *progress_key = PyUnicode_FromString("progress");
 		PyObject *img_key = PyUnicode_FromString("img");
 		PyObject *name_key = PyUnicode_FromString("name");
 		PyObject *artist_key = PyUnicode_FromString("artist");
 		PyObject *album_key = PyUnicode_FromString("album");
-		PyObject *pValue = PyObject_CallObject(pFunc, pArgs);
+		PyObject *playing_key = PyUnicode_FromString("playing");
 
 		if (pValue != NULL)
 		{
-			PyObject *v = PyObject_GetItem(pValue, length_key);
 			Track track;
+
+			PyObject *v = PyObject_GetItem(pValue, length_key);
 			track.duration = PyFloat_AsDouble(v);
+
 			v = PyObject_GetItem(pValue, progress_key);
 			track.progress = PyFloat_AsDouble(v);
+
 			v = PyObject_GetItem(pValue, img_key);
-			char *url = PyBytes_AsString(v);
 			track.image_url = PyBytes_AsString(v);
+
 			v = PyObject_GetItem(pValue, name_key);
 			track.name = PyBytes_AsString(v);
+
 			v = PyObject_GetItem(pValue, artist_key);
 			track.artist = PyBytes_AsString(v);
+
 			v = PyObject_GetItem(pValue, album_key);
 			track.album = PyBytes_AsString(v);
+
+			v = PyObject_GetItem(pValue, playing_key);
+			track.playing = PyFloat_AsDouble(v);
 
 			Py_DECREF(pValue);
 			return track;
@@ -203,6 +223,17 @@ void update_text(Track *track)
 	track_artist_album_text.setPosition(track_artist_album_text_x, track_artist_album_text_y);
 }
 
+void update_play_pause_images(Track *track)
+{
+	int play_sprite_x = (width / 2) - play_sprite.getLocalBounds().width / 2 * 0.05;
+	int play_sprite_y = album_sprite.getLocalBounds().height + 90;
+	play_sprite.setPosition(play_sprite_x, play_sprite_y);
+
+	int pause_sprite_x = (width / 2) - pause_sprite.getLocalBounds().width / 2 * 0.2;
+	int pause_sprite_y = album_sprite.getLocalBounds().height + 90;
+	pause_sprite.setPosition(pause_sprite_x, pause_sprite_y);
+}
+
 void update()
 {
 	Track track = get_current_track();
@@ -214,18 +245,68 @@ void update()
 	update_progress_bar(&track);
 
 	update_text(&track);
+
+	update_play_pause_images(&track);
+
+	playing = track.playing;
+}
+
+void init_buttons()
+{
+	if (!(play_texture.loadFromFile("play.png")))
+	{
+		cout << "Error loading play.png" << endl;
+	}
+	play_texture.setSmooth(true);
+	play_sprite.setTexture(play_texture);
+	play_sprite.setScale(0.05, 0.05);
+
+	if (!(pause_texture.loadFromFile("pause.png")))
+	{
+		cout << "Error loading play.png" << endl;
+	}
+	pause_texture.setSmooth(true);
+	pause_sprite.setTexture(pause_texture);
+	pause_sprite.setScale(0.2, 0.2);
+}
+
+bool clicking_pause_button(int x, int y)
+{
+	int sw = pause_sprite.getLocalBounds().width;
+	int sh = pause_sprite.getLocalBounds().height;
+	int sx = pause_sprite.getPosition().x;
+	int sy = pause_sprite.getPosition().y;
+
+	return x >= sx && x <= sx + sw && y >= sy && y <= sy + sh;
+}
+
+void handle_mouse_clicks(sf::RenderWindow &window, int &mouse_clicked_frame)
+{
+	if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+	{
+		if (clicking_pause_button(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y))
+		{
+			system("dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause");
+		}
+
+		mouse_clicked_frame = 0;
+	}
 }
 
 int main()
 {
-	sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(width, height), title);
-	window->setFramerateLimit(60);
-
 	if (!font.loadFromMemory(&Lato_Regular_ttf, Lato_Regular_ttf_len))
 	{
 		cout << "Error loading font" << endl;
 		return -1;
 	}
+
+	sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(width, height), title);
+	window->setFramerateLimit(60);
+	int frame = 0;
+	int mouse_clicked_frame = 0;
+
+	init_buttons();
 
 	while (window->isOpen())
 	{
@@ -237,9 +318,13 @@ int main()
 				window->close();
 		}
 
-		usleep(500000);
+		if (mouse_clicked_frame >= 30)
+		{
+			handle_mouse_clicks(*window, mouse_clicked_frame);
+		}
 
-		update();
+		if (frame % 30 == 0)
+			update();
 
 		window->clear(bg_color);
 
@@ -251,7 +336,15 @@ int main()
 		window->draw(track_name_text);
 		window->draw(track_artist_album_text);
 
+		if (!playing)
+			window->draw(play_sprite);
+		else
+			window->draw(pause_sprite);
+
 		window->display();
+
+		frame++;
+		mouse_clicked_frame++;
 	}
 
 	return 0;

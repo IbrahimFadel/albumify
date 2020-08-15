@@ -14,7 +14,6 @@ def get_current_track():
     global spotify
 
     track = spotify.current_playback()
-
     return {
         'length': ms_to_s(track['item']['duration_ms']),
         'progress': ms_to_s(track['progress_ms']),
@@ -22,4 +21,5 @@ def get_current_track():
         'name': bytes(track['item']['name'], 'utf-8'),
         'artist': bytes(track['item']['artists'][0]['name'], 'utf-8'),
         'album': bytes(track['item']['album']['name'], 'utf-8'),
+        'playing': track['is_playing']
     }
