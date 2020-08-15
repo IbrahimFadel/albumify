@@ -1,6 +1,8 @@
 # albumify
 An extremely simple app that displays Spotify's current song's album art, title, and progress
 
+![Example](images/example.png)
+
 After switching to Spotify, i noticed they don't have a way to only see the album art like Itunes. This runs along side Spotify and shows all that stuff.
 
 ## Installation
