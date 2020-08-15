@@ -10,10 +10,10 @@ git clone https://github.com/IbrahimFadel/albumify
 cd albumify
 ```
 
-Go to the [Spotify Developer Console](https://developer.spotify.com/console/) and get credentials. Put them into ```main.py```
+Go to the [Spotify Developer Console](https://developer.spotify.com/console/) and get credentials. Put them into ```albumify.py```
 
 ```
-make && make install
+sudo make install
 ```
 
 ## Usage
