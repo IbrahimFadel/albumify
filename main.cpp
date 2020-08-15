@@ -10,8 +10,10 @@
 #include <unistd.h>
 #include <bitset>
 
-#include "lato.h"
 #include "config.h"
+#include "lato.h"
+#include "play.h"
+#include "pause.h"
 
 using std::cout;
 using std::endl;
@@ -253,7 +255,7 @@ void update()
 
 void init_buttons()
 {
-	if (!(play_texture.loadFromFile("play.png")))
+	if (!(play_texture.loadFromMemory(&play_png, play_png_len)))
 	{
 		cout << "Error loading play.png" << endl;
 	}
@@ -261,7 +263,7 @@ void init_buttons()
 	play_sprite.setTexture(play_texture);
 	play_sprite.setScale(0.05, 0.05);
 
-	if (!(pause_texture.loadFromFile("pause.png")))
+	if (!(pause_texture.loadFromMemory(&pause_png, pause_png_len)))
 	{
 		cout << "Error loading play.png" << endl;
 	}
