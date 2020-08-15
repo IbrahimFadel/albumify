@@ -8,12 +8,8 @@
 #include <curl/curl.h>
 #include <unistd.h>
 #include <bitset>
-#include <boost/spirit/include/karma.hpp>
 
 #include "Font.h"
-// #include "Image.h"
-
-namespace karma = boost::spirit::karma;
 
 using std::cout;
 using std::endl;
@@ -51,8 +47,6 @@ typedef struct Track
 Track get_current_track()
 {
 	setenv("PYTHONPATH", "/usr/local/bin/", 1);
-	// setenv("PYTHONPATH", "/home/ibrahim/devdir/spotify-client", 1);
-	// setenv("PYTHONPATH", ".", 1);
 	Py_Initialize();
 
 	PyObject *pName = PyUnicode_FromString("albumify");
