@@ -7,6 +7,13 @@
 #include <SFML/Graphics.hpp>
 #include <curl/curl.h>
 #include <unistd.h>
+#include <bitset>
+#include <boost/spirit/include/karma.hpp>
+
+#include "Font.h"
+// #include "Image.h"
+
+namespace karma = boost::spirit::karma;
 
 using std::cout;
 using std::endl;
@@ -41,10 +48,12 @@ typedef struct Track
 
 Track get_current_track()
 {
-	setenv("PYTHONPATH", ".", 1);
+	setenv("PYTHONPATH", "/usr/local/bin/", 1);
+	// setenv("PYTHONPATH", "/home/ibrahim/devdir/spotify-client", 1);
+	// setenv("PYTHONPATH", ".", 1);
 	Py_Initialize();
 
-	PyObject *pName = PyUnicode_FromString("main");
+	PyObject *pName = PyUnicode_FromString("albumify");
 	PyObject *pModule = PyImport_Import(pName);
 	Py_DECREF(pName);
 
@@ -110,27 +119,28 @@ void update()
 
 	CURL *curl;
 	CURLcode res;
-	std::string read_buffer;
+
+	std::string image_buffer;
+	curl_global_init(CURL_GLOBAL_DEFAULT);
 
 	curl = curl_easy_init();
 	if (curl)
 	{
 		curl_easy_setopt(curl, CURLOPT_URL, track.image_url.c_str());
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &image_buffer);
 		res = curl_easy_perform(curl);
-		curl_easy_cleanup(curl);
-
-		std::ofstream file;
-		file.open("album.png", std::ios::binary);
-		file.write(read_buffer.c_str(), read_buffer.size());
-		file.close();
 	}
 	else
 	{
 		cout << "Error downloading file: " << track.image_url << endl;
 		return;
 	}
+
+	std::ofstream file;
+	file.open("album.png", std::ios::binary);
+	file.write(image_buffer.c_str(), image_buffer.size());
+	file.close();
 
 	if (!album_texture.loadFromFile("album.png"))
 	{
@@ -157,7 +167,7 @@ void update()
 	int progress_bar_x = 50;
 	progress_bar.setPosition(progress_bar_x, progress_bar_y);
 
-	if (!font.loadFromFile("assets/Lato/Lato-Regular.ttf"))
+	if (!font.loadFromMemory(&Lato_Regular_ttf, Lato_Regular_ttf_len))
 	{
 		cout << "Error loading font" << endl;
 		return;

@@ -12,3 +12,4 @@ all:
 install:
 	make
 	install $(BIN) $(DEST_DIR)
+	install albumify.py $(DEST_DIR)

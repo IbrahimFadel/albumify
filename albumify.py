@@ -1,10 +1,9 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth, SpotifyClientCredentials
-# import os
 
-client_id = ""
-client_secret = ""
-redirect_uri = ""
+client_id = "bc339b67c43d486eadc4c20fc3785390"
+client_secret = "ca6c3fbd00c648e7812cb5d81794dc1a"
+redirect_uri = "http://localhost:1111/cb"
 scope = "user-read-playback-state"
 
 spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
