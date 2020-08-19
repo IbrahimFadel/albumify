@@ -65,6 +65,9 @@ typedef struct Track
 Track get_current_track()
 {
 	setenv("PYTHONPATH", "/usr/local/bin/", 1);
+	// const char *path_str = "/usr/local/bin";
+	// wchar_t *path = Py_DecodeLocale(path_str, NULL);
+	// Py_SetPath(path);
 
 	setenv("SPOTIPY_CLIENT_ID", client_id, 1);
 	setenv("SPOTIPY_CLIENT_SECRET", client_secret, 1);
@@ -306,7 +309,7 @@ int main()
 	sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(width, height), title);
 	window->setFramerateLimit(60);
 	int frame = 0;
-	int mouse_clicked_frame = 0;
+	// int mouse_clicked_frame = 0;
 
 	init_buttons();
 
@@ -320,10 +323,10 @@ int main()
 				window->close();
 		}
 
-		if (mouse_clicked_frame >= 30)
-		{
-			handle_mouse_clicks(*window, mouse_clicked_frame);
-		}
+		// if (mouse_clicked_frame >= 30)
+		// {
+		// 	handle_mouse_clicks(*window, mouse_clicked_frame);
+		// }
 
 		if (frame % 30 == 0)
 			update();
@@ -346,7 +349,7 @@ int main()
 		window->display();
 
 		frame++;
-		mouse_clicked_frame++;
+		// mouse_clicked_frame++;
 	}
 
 	return 0;
