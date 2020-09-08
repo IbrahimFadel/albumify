@@ -31,3 +31,8 @@ albumify
 ```
 
 This will open up the window
+
+## TODO
+
+* Import spotipy in c++ and do all the api requests inside the c++
+    * This means only import spotipy once, should speed things up
